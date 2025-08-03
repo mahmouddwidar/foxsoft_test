@@ -22,6 +22,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Test route to verify API is working
+Route::get('/test', function () {
+    return response()->json([
+        'message' => 'API is working!',
+        'timestamp' => now()
+    ]);
+});
+
 // Authentication Routes
 Route::post('users/login', [UserAuthController::class, 'login']);
 Route::post('admins/login', [AdminAuthController::class, 'login']);
