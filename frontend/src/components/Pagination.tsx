@@ -1,4 +1,3 @@
-// src/components/Pagination.tsx
 import React from "react";
 import { DOTS, usePagination } from "../hooks/usePagination";
 import LeftArrow from "./icons/LeftArrow";

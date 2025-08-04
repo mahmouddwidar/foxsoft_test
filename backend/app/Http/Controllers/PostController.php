@@ -17,11 +17,19 @@ class PostController extends Controller
         $user = $request->user();
         $perPage = $request->query('per_page', 10);
         $postsQuery = Post::with('user')->latest();
+        $searchTerm = $request->query('search');
 
 
         // User can only see their own posts
         if (!($user instanceof Admin)) {
             $postsQuery->where('user_id', $user->id);
+        }
+
+        if ($searchTerm) {
+            $postsQuery->where(function ($query) use ($searchTerm) {
+                $query->where('title', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('content', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
 
         $posts = $postsQuery->paginate($perPage);
