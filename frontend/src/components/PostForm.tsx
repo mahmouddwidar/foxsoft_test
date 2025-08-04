@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { postsAPI } from "../services/api";
 import { useFormik } from "formik";
 import { postSchema } from "../utils/validationSchema";
 import Loader from "./Loader";
+import { useAuth } from "../contexts/AuthContext";
 
 interface PostFormProps {
 	mode: "create" | "edit";
@@ -14,11 +15,13 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 	const { id } = useParams<{ id: string }>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
+	const { userType } = useAuth();
 
 	type PostFormValues = {
 		title: string;
 		content: string;
 		status: "published" | "draft";
+		user_id?: number;
 	};
 
 	const formik = useFormik({
@@ -26,6 +29,7 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 			title: "",
 			content: "",
 			status: "draft" as "published" | "draft",
+			user_id: undefined,
 		},
 		validationSchema: postSchema,
 		onSubmit: handleSubmit,
@@ -50,6 +54,20 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 	}
 
 	useEffect(() => {
+		// Fetch current user status
+		const fetchInitialData = async () => {
+			try {
+				const response = await postsAPI.getCurrentUser();
+				setIsAdmin(response.data.isAdmin);
+			} catch (error) {
+				console.error("Failed to fetch initial data:", error);
+			}
+		};
+
+		fetchInitialData();
+	}, []);
+
+	useEffect(() => {
 		if (mode === "edit" && id) {
 			fetchPost();
 		}
@@ -59,11 +77,12 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 		try {
 			setIsLoading(true);
 			const response = await postsAPI.getPost(parseInt(id!));
-			const post = response.post;
+			const post = response.data;
 			formik.setValues({
 				title: post.title,
 				content: post.content,
 				status: post.status,
+				user_id: post.user?.id,
 			});
 		} catch (error: any) {
 			setError(error.response?.data?.message || "Failed to fetch post");
@@ -170,6 +189,34 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 										</div>
 									)}
 								</div>
+
+								{/* User ID field for admin users */}
+								{userType === "admin" && (
+									<div>
+										<label
+											htmlFor="user_id"
+											className="block text-sm font-medium text-gray-700"
+										>
+											Assign to User ID
+										</label>
+										<input
+											type="number"
+											id="user_id"
+											name="user_id"
+											disabled={isLoading}
+											value={formik.values.user_id || ""}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+											className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+											placeholder="Enter user ID"
+										/>
+										{formik.errors.user_id && formik.touched.user_id && (
+											<div className="text-red-600 text-sm mt-1">
+												{formik.errors.user_id}
+											</div>
+										)}
+									</div>
+								)}
 
 								<div className="flex justify-end space-x-3">
 									<button

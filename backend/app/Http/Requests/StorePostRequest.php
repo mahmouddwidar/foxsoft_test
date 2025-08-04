@@ -21,10 +21,16 @@ class StorePostRequest extends FormRequest
      */
     public function rules()
     {
-        return [
+        $rules = [
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|in:published,draft',
         ];
+
+        if ($this->user() && $this->user()->isAdmin()) {
+            $rules['user_id'] = 'required|exists:users,id';
+        }
+
+        return $rules;
     }
 }

@@ -21,11 +21,21 @@ interface Post {
 }
 
 interface ApiResponse {
-	current_page: number;
 	data: Post[];
-	last_page: number;
-	per_page: number;
-	total: number;
+	links: {
+		first: string;
+		last: string;
+		prev: string | null;
+		next: string | null;
+	};
+	meta: {
+		current_page: number;
+		from: number;
+		last_page: number;
+		per_page: number;
+		to: number;
+		total: number;
+	};
 }
 
 interface PostsDashboardProps {
@@ -72,10 +82,11 @@ const PostsDashboard: React.FC<PostsDashboardProps> = ({
 				per_page: perPage,
 				search: debouncedSearchTerm,
 			});
-			const data = response.data as ApiResponse;
-			setPosts(data.data || []);
-			setTotalPages(data.last_page);
-			setTotalItems(data.total);
+
+			// Update to match new API response structure
+			setPosts(response.data.data || []);
+			setTotalPages(response.data.meta.last_page);
+			setTotalItems(response.data.meta.total);
 		} catch (error: any) {
 			setError(error.response?.data?.message || "Failed to fetch posts");
 		} finally {
@@ -89,7 +100,7 @@ const PostsDashboard: React.FC<PostsDashboardProps> = ({
 
 	const handlePerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		setPerPage(Number(e.target.value));
-		setCurrentPage(1);
+		setCurrentPage(1); // Reset to first page when changing items per page
 	};
 
 	const handleDelete = async (postId: number) => {
@@ -97,9 +108,10 @@ const PostsDashboard: React.FC<PostsDashboardProps> = ({
 			try {
 				if (onDeletePost) {
 					await onDeletePost(postId);
+					fetchPosts();
 				} else {
 					await postsAPI.deletePost(postId);
-					fetchPosts(); // Default behavior - refresh the list
+					fetchPosts();
 				}
 			} catch (error: any) {
 				setError(error.response?.data?.message || "Failed to delete post");

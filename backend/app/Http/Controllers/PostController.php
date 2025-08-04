@@ -44,7 +44,20 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request): JsonResponse
     {
-        $post = $request->user()->posts()->create($request->validated());
+        $data = $request->validated();
+
+        // If admin is assigning to a specific user
+        if ($request->user()->isAdmin() && isset($data['user_id'])) {
+            $post = Post::create([
+                'user_id' => $data['user_id'],
+                'title' => $data['title'],
+                'content' => $data['content'],
+                'status' => $data['status'],
+            ]);
+        } else {
+            // Regular user creating their own post
+            $post = $request->user()->posts()->create($data);
+        }
 
         return response()->json([
             'message' => 'Post created successfully',
@@ -69,7 +82,16 @@ class PostController extends Controller
     {
         $this->authorize('update', $post);
 
-        $post->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->user()->isAdmin() && isset($data['user_id'])) {
+            $post->user_id = $data['user_id'];
+        }
+        elseif (!$request->user()->isAdmin()) {
+            $post->user_id = $request->user()->id;
+        }
+
+        $post->update($data);
 
         return (new PostResource($post->load('user')))->response();
     }

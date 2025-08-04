@@ -21,10 +21,16 @@ class UpdatePostRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'status' => 'required|in:published,draft',
+        $rules = [
+            'title' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required|string',
+            'status' => 'sometimes|required|in:published,draft',
         ];
+
+        if ($this->user() && $this->user()->isAdmin()) {
+            $rules['user_id'] = 'sometimes|required|exists:users,id';
+        }
+
+        return $rules;
     }
 }

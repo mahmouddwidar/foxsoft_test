@@ -81,14 +81,26 @@ export const postsAPI = {
     },
 
     // Create new post
-    createPost: async (data: { title: string; content: string; status: 'published' | 'draft' }) => {
+    createPost: async (data: { title: string; content: string; status: 'published' | 'draft'; user_id?: number }) => {
         const response = await api.post('/posts', data);
         return response.data;
     },
 
     // Update post
-    updatePost: async (id: number, data: { title: string; content: string; status: 'published' | 'draft' }) => {
+    updatePost: async (id: number, data: { title: string; content: string; status: 'published' | 'draft'; user_id?: number }) => {
         const response = await api.put(`/posts/${id}`, data);
+        return response.data;
+    },
+
+    // Get current user info
+    getCurrentUser: async () => {
+        const response = await api.get('/user');
+        return response.data;
+    },
+
+    // Get all users (admin only)
+    getUsers: async () => {
+        const response = await api.get('/users');
         return response.data;
     },
 
