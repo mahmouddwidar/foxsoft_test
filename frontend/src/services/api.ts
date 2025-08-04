@@ -69,9 +69,9 @@ export const authAPI = {
 // Posts API methods
 export const postsAPI = {
     // Get all posts (filtered by user role)
-    getPosts: async () => {
-        const response = await api.get('/posts');
-        return response.data;
+    getPosts: async (params?: { page?: number; per_page?: number }) => {
+        const response = await api.get('/posts', { params });
+        return response;
     },
 
     // Get single post

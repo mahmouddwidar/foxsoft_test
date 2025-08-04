@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { postsAPI } from "../services/api";
 import { useFormik } from "formik";
 import { postSchema } from "../utils/validationSchema";
+import Loader from "./Loader";
 
 interface PostFormProps {
 	mode: "create" | "edit";
@@ -74,7 +75,7 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 	if (isLoading && mode === "edit") {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-xl">Loading...</div>
+				<Loader />
 			</div>
 		);
 	}
@@ -88,111 +89,111 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 							{mode === "create" ? "Create New Post" : "Edit Post"}
 						</h2>
 
-						{error && (
+						{error ? (
 							<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
 								{error}
 							</div>
+						) : (
+							<form onSubmit={formik.handleSubmit} className="space-y-6">
+								<div>
+									<label
+										htmlFor="title"
+										className="block text-sm font-medium text-gray-700"
+									>
+										Title
+									</label>
+									<input
+										type="text"
+										id="title"
+										name="title"
+										disabled={isLoading}
+										value={formik.values.title}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+										placeholder="Enter post title"
+									/>
+									{formik.errors.title && formik.touched.title && (
+										<div className="text-red-600 text-sm mt-1">
+											{formik.errors.title}
+										</div>
+									)}
+								</div>
+
+								<div>
+									<label
+										htmlFor="content"
+										className="block text-sm font-medium text-gray-700"
+									>
+										Content
+									</label>
+									<textarea
+										id="content"
+										name="content"
+										disabled={isLoading}
+										value={formik.values.content}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										rows={8}
+										className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+										placeholder="Enter post content"
+									/>
+									{formik.errors.content && formik.touched.content && (
+										<div className="text-red-600 text-sm mt-1">
+											{formik.errors.content}
+										</div>
+									)}
+								</div>
+
+								<div>
+									<label
+										htmlFor="status"
+										className="block text-sm font-medium text-gray-700"
+									>
+										Status
+									</label>
+									<select
+										id="status"
+										name="status"
+										disabled={isLoading}
+										value={formik.values.status}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<option value="draft">Draft</option>
+										<option value="published">Published</option>
+									</select>
+									{formik.errors.status && formik.touched.status && (
+										<div className="text-red-600 text-sm mt-1">
+											{formik.errors.status}
+										</div>
+									)}
+								</div>
+
+								<div className="flex justify-end space-x-3">
+									<button
+										type="button"
+										onClick={() => navigate(-1)}
+										disabled={isLoading}
+										className="bg-gray-300 cursor-pointer hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										Cancel
+									</button>
+									<button
+										type="submit"
+										disabled={isLoading || !(formik.isValid && formik.dirty)}
+										className="bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+									>
+										{isLoading
+											? "Saving..."
+											: mode === "create"
+											? "Create Post"
+											: "Update Post"}
+									</button>
+								</div>
+							</form>
 						)}
-
-						<form onSubmit={formik.handleSubmit} className="space-y-6">
-							<div>
-								<label
-									htmlFor="title"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Title
-								</label>
-								<input
-									type="text"
-									id="title"
-									name="title"
-									disabled={isLoading}
-									value={formik.values.title}
-									onChange={formik.handleChange}
-									onBlur={formik.handleBlur}
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-									placeholder="Enter post title"
-								/>
-								{formik.errors.title && formik.touched.title && (
-									<div className="text-red-600 text-sm mt-1">
-										{formik.errors.title}
-									</div>
-								)}
-							</div>
-
-							<div>
-								<label
-									htmlFor="content"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Content
-								</label>
-								<textarea
-									id="content"
-									name="content"
-									disabled={isLoading}
-									value={formik.values.content}
-									onChange={formik.handleChange}
-									onBlur={formik.handleBlur}
-									rows={8}
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-									placeholder="Enter post content"
-								/>
-								{formik.errors.content && formik.touched.content && (
-									<div className="text-red-600 text-sm mt-1">
-										{formik.errors.content}
-									</div>
-								)}
-							</div>
-
-							<div>
-								<label
-									htmlFor="status"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Status
-								</label>
-								<select
-									id="status"
-									name="status"
-									disabled={isLoading}
-									value={formik.values.status}
-									onChange={formik.handleChange}
-									onBlur={formik.handleBlur}
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									<option value="draft">Draft</option>
-									<option value="published">Published</option>
-								</select>
-								{formik.errors.status && formik.touched.status && (
-									<div className="text-red-600 text-sm mt-1">
-										{formik.errors.status}
-									</div>
-								)}
-							</div>
-
-							<div className="flex justify-end space-x-3">
-								<button
-									type="button"
-									onClick={() => navigate(-1)}
-									disabled={isLoading}
-									className="bg-gray-300 cursor-pointer hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									Cancel
-								</button>
-								<button
-									type="submit"
-									disabled={isLoading || !(formik.isValid && formik.dirty)}
-									className="bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
-								>
-									{isLoading
-										? "Saving..."
-										: mode === "create"
-										? "Create Post"
-										: "Update Post"}
-								</button>
-							</div>
-						</form>
 					</div>
 				</div>
 			</div>

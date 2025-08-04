@@ -15,24 +15,25 @@ class PostController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $perPage = $request->query('per_page', 10);
+        $postsQuery = Post::with('user')->latest();
 
-        if ($user instanceof Admin) {
-            // Admin can see all posts
-            $posts = Post::with('user')->latest()->get();
-        } else {
-            // User can only see their own posts
-            $posts = Post::where('user_id', $user->id)->latest()->get();
+
+        // User can only see their own posts
+        if (!($user instanceof Admin)) {
+            $postsQuery->where('user_id', $user->id);
         }
 
-        if ($posts->isEmpty()) {
+        $posts = $postsQuery->paginate($perPage);
+
+        if ($posts->isEmpty() && $posts->currentPage() > $posts->lastPage()) {
             return response()->json([
-                'message' => 'No posts found',
+                'message' => 'No posts found on this page.',
+                'data' => [],
             ], 404);
         }
 
-        return response()->json([
-            'posts' => $posts
-        ]);
+        return response()->json($posts);
     }
 
     /**
