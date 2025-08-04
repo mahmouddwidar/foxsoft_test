@@ -2,6 +2,10 @@
 
 A full-stack web application built with Laravel and React, featuring user authentication, post management, and role-based access control.
 
+## Demo Video
+
+[FoxSoft Test Project Demo](https://github.com/user-attachments/assets/07bb5c46-d793-4a74-ab42-428aba0b6059)
+
 ## Features
 
 - **Authentication System**
