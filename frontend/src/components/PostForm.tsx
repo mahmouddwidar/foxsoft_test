@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { postsAPI } from "../services/api";
 import { useFormik } from "formik";
@@ -52,20 +52,6 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 			setIsLoading(false);
 		}
 	}
-
-	useEffect(() => {
-		// Fetch current user status
-		const fetchInitialData = async () => {
-			try {
-				const response = await postsAPI.getCurrentUser();
-				setIsAdmin(response.data.isAdmin);
-			} catch (error) {
-				console.error("Failed to fetch initial data:", error);
-			}
-		};
-
-		fetchInitialData();
-	}, []);
 
 	useEffect(() => {
 		if (mode === "edit" && id) {
@@ -201,6 +187,7 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 										</label>
 										<input
 											type="number"
+											required
 											id="user_id"
 											name="user_id"
 											disabled={isLoading}

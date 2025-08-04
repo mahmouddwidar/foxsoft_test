@@ -14,7 +14,8 @@ const postSchema = Yup.object().shape({
         .required('Content is required'),
     status: Yup.string()
         .required('Status is required')
-        .oneOf(['published', 'draft'], 'Invalid status')
+        .oneOf(['published', 'draft'], 'Invalid status'),
+    user_id: Yup.number().required('User ID is required').optional()
 });
 
 export { loginSchema, postSchema }
