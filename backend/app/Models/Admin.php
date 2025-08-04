@@ -28,4 +28,9 @@ class Admin extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function isAdmin()
+    {
+        return true;
+    }
 }

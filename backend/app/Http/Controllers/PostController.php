@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class PostController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of the resource.
      */
@@ -16,57 +22,33 @@ class PostController extends Controller
     {
         $user = $request->user();
         $perPage = $request->query('per_page', 10);
-        $postsQuery = Post::with('user')->latest();
         $searchTerm = $request->query('search');
 
+        $query = Post::with('user')
+            ->when(!$user->isAdmin(), fn($q) => $q->where('user_id', $user->id))
+            ->when($searchTerm, function ($q) use ($searchTerm) {
+                $q->where(function ($query) use ($searchTerm) {
+                    $query->where('title', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('content', 'like', '%' . $searchTerm . '%');
+                });
+            })
+            ->latest();
 
-        // User can only see their own posts
-        if (!($user instanceof Admin)) {
-            $postsQuery->where('user_id', $user->id);
-        }
+        $posts = $query->paginate($perPage);
 
-        if ($searchTerm) {
-            $postsQuery->where(function ($query) use ($searchTerm) {
-                $query->where('title', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('content', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-
-        $posts = $postsQuery->paginate($perPage);
-
-        if ($posts->isEmpty() && $posts->currentPage() > $posts->lastPage()) {
-            return response()->json([
-                'message' => 'No posts found on this page.',
-                'data' => [],
-            ], 404);
-        }
-
-        return response()->json($posts);
+        return PostResource::collection($posts)->response();
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'status' => 'required|in:published,draft',
-        ]);
-
-        $user = $request->user();
-
-        $post = Post::create([
-            'title' => $request->title,
-            'content' => $request->content,
-            'status' => $request->status,
-            'user_id' => $user->id,
-        ]);
+        $post = $request->user()->posts()->create($request->validated());
 
         return response()->json([
             'message' => 'Post created successfully',
-            'post' => $post->load('user')
+            'post' => new PostResource($post->load('user'))
         ], 201);
     }
 
@@ -75,46 +57,21 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): JsonResponse
     {
-        $user = $request->user();
+        $this->authorize('view', $post);
 
-        // Check if user can view this post
-        if (!($user instanceof Admin || $post->user_id === $user->id)) {
-            return response()->json([
-                'message' => 'Access denied. You can only view your own posts.'
-            ], 403);
-        }
-
-        return response()->json([
-            'post' => $post->load('user')
-        ]);
+        return (new PostResource($post->load('user')))->response();
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Post $post): JsonResponse
+    public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'content' => ['required', 'string'],
-            'status' => ['required', 'in:published,draft'],
-        ]);
+        $this->authorize('update', $post);
 
-        $user = $request->user();
+        $post->update($request->validated());
 
-        if (!($user instanceof Admin || $user->id === $post->user_id)) {
-            return response()->json([
-                'message' => 'Access denied. You can only update your own posts.'
-            ], 403);
-        }
-
-        // Update the post with validated data
-        $post->update($validated);
-
-        return response()->json([
-            'message' => 'Post updated successfully',
-            'post' => $post->load('user')
-        ]);
+        return (new PostResource($post->load('user')))->response();
     }
 
     /**
@@ -122,19 +79,10 @@ class PostController extends Controller
      */
     public function destroy(Request $request, Post $post): JsonResponse
     {
-        $user = $request->user();
-
-        // Check if user can delete this post
-        if (!($user instanceof Admin || $post->user_id === $user->id)) {
-            return response()->json([
-                'message' => 'Access denied. You can only delete your own posts.'
-            ], 403);
-        }
+        $this->authorize('delete', $post);
 
         $post->delete();
 
-        return response()->json([
-            'message' => 'Post deleted successfully'
-        ]);
+        return response()->json(['message' => 'Post deleted successfully']);
     }
 }

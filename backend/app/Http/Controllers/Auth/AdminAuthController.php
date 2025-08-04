@@ -3,22 +3,19 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
 use App\Models\Admin;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminAuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $validated = $request->validated();
 
-        $admin = Admin::where('email', $request->email)->first();
+        $admin = Admin::where('email', $validated['email'])->first();
 
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
+        if (!$admin || !Hash::check($validated['password'], $admin->password)) {
             return response()->json([
                 'message' => 'Invalid credentials',
                 'errors' => [
