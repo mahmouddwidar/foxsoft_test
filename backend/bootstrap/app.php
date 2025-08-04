@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -51,6 +52,17 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Access denied. You do not have permission to access this resource.',
                     'error' => 'Forbidden'
                 ], 403);
+            }
+        });
+
+        $exceptions->render(function (ModelNotFoundException $e, \Illuminate\Http\Request $request) {
+
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $model = strtolower(class_basename($e->getModel()));
+                return response()->json([
+                    'message' => "The requested {$model} was not found.",
+                    'error' => 'Not Found'
+                ], 404);
             }
         });
     })->create();

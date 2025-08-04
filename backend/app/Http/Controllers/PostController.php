@@ -66,11 +66,10 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): JsonResponse
     {
-        
         $user = $request->user();
 
         // Check if user can view this post
-        if ($post->user_id !== $user->id) {
+        if (!($user instanceof Admin || $post->user_id === $user->id)) {
             return response()->json([
                 'message' => 'Access denied. You can only view your own posts.'
             ], 403);
@@ -86,28 +85,22 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'status' => 'required|in:published,draft',
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string'],
+            'status' => ['required', 'in:published,draft'],
         ]);
 
         $user = $request->user();
 
-        // Check if user can update this post
-        if ($user instanceof Admin) {
-            // Admin can update any post
-        } elseif ($post->user_id !== $user->id) {
+        if (!($user instanceof Admin || $user->id === $post->user_id)) {
             return response()->json([
                 'message' => 'Access denied. You can only update your own posts.'
             ], 403);
         }
 
-        $post->update([
-            'title' => $request->title,
-            'content' => $request->content,
-            'status' => $request->status,
-        ]);
+        // Update the post with validated data
+        $post->update($validated);
 
         return response()->json([
             'message' => 'Post updated successfully',
@@ -123,9 +116,7 @@ class PostController extends Controller
         $user = $request->user();
 
         // Check if user can delete this post
-        if ($user instanceof Admin) {
-            // Admin can delete any post
-        } elseif ($post->user_id !== $user->id) {
+        if (!($user instanceof Admin || $post->user_id === $user->id)) {
             return response()->json([
                 'message' => 'Access denied. You can only delete your own posts.'
             ], 403);
