@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 // Pages
 import UserLogin from "./pages/UserLogin";
@@ -16,6 +17,8 @@ import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 
 import "./App.css";
+import Home from "./pages/Home";
+import NotFound from "./components/NotFound";
 
 function App() {
 	return (
@@ -24,8 +27,32 @@ function App() {
 				<div className="font-inter">
 					<Routes>
 						{/* Public routes */}
-						<Route path="/users/login" element={<UserLogin />} />
-						<Route path="/admins/login" element={<AdminLogin />} />
+						<Route
+							path="/"
+							element={
+								<PublicRoute>
+									<Home />
+								</PublicRoute>
+							}
+						/>
+
+						<Route
+							path="/users/login"
+							element={
+								<PublicRoute>
+									<UserLogin />
+								</PublicRoute>
+							}
+						/>
+						
+						<Route
+							path="/admins/login"
+							element={
+								<PublicRoute>
+									<AdminLogin />
+								</PublicRoute>
+							}
+						/>
 
 						{/* Protected routes */}
 						<Route
@@ -61,9 +88,8 @@ function App() {
 							}
 						/>
 
-						{/* Default redirect */}
-						<Route path="/" element={<Navigate to="/users/login" replace />} />
-						<Route path="*" element={<Navigate to="/users/login" replace />} />
+						{/* Not Found */}
+						<Route path="*" element={<NotFound />} />
 					</Routes>
 				</div>
 			</Router>

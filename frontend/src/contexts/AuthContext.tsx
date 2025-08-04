@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		type: "user" | "admin"
 	) => {
 		try {
-			setIsLoading(true);
+			// setIsLoading(true);
 			let response;
 
 			if (type === "user") {
@@ -115,6 +115,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		} catch (error) {
 			console.error("Logout error:", error);
 		} finally {
+			// Clear all auth-related data
+			localStorage.removeItem("auth_token");
+			localStorage.removeItem("user_type");
+			localStorage.removeItem("user_data");
 			setUser(null);
 			setUserType(null);
 		}

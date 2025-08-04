@@ -2,17 +2,11 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-interface ProtectedRouteProps {
+interface PublicRouteProps {
 	children: React.ReactNode;
-	requiredUserType?: "user" | "admin";
-	redirectTo?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-	children,
-	requiredUserType,
-	redirectTo,
-}) => {
+const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
 	const { isAuthenticated, userType, isLoading } = useAuth();
 
 	if (isLoading) {
@@ -23,11 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 		);
 	}
 
-	if (!isAuthenticated) {
-		return <Navigate to={redirectTo || "/"} replace />;
-	}
-
-	if (requiredUserType && userType !== requiredUserType) {
+	if (isAuthenticated) {
 		// Redirect to appropriate dashboard based on user type
 		const dashboardPath = userType === "admin" ? "/admins" : "/users";
 		return <Navigate to={dashboardPath} replace />;
@@ -36,4 +26,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	return <>{children}</>;
 };
 
-export default ProtectedRoute;
+export default PublicRoute;

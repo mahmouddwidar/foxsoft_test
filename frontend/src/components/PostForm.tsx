@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { postsAPI } from "../services/api";
+import { useFormik } from "formik";
+import { postSchema } from "../utils/validationSchema";
 
 interface PostFormProps {
 	mode: "create" | "edit";
@@ -9,12 +11,42 @@ interface PostFormProps {
 const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 	const navigate = useNavigate();
 	const { id } = useParams<{ id: string }>();
-
-	const [title, setTitle] = useState("");
-	const [content, setContent] = useState("");
-	const [status, setStatus] = useState<"published" | "draft">("draft");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
+
+	type PostFormValues = {
+		title: string;
+		content: string;
+		status: "published" | "draft";
+	};
+
+	const formik = useFormik({
+		initialValues: {
+			title: "",
+			content: "",
+			status: "draft" as "published" | "draft",
+		},
+		validationSchema: postSchema,
+		onSubmit: handleSubmit,
+	});
+
+	async function handleSubmit(values: PostFormValues) {
+		setError("");
+		setIsLoading(true);
+
+		try {
+			if (mode === "create") {
+				await postsAPI.createPost(values);
+			} else {
+				await postsAPI.updatePost(parseInt(id!), values);
+			}
+			navigate(-1);
+		} catch (error: any) {
+			setError(error.response?.data?.message || `Failed to ${mode} post`);
+		} finally {
+			setIsLoading(false);
+		}
+	}
 
 	useEffect(() => {
 		if (mode === "edit" && id) {
@@ -27,34 +59,13 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 			setIsLoading(true);
 			const response = await postsAPI.getPost(parseInt(id!));
 			const post = response.post;
-			setTitle(post.title);
-			setContent(post.content);
-			setStatus(post.status);
+			formik.setValues({
+				title: post.title,
+				content: post.content,
+				status: post.status,
+			});
 		} catch (error: any) {
 			setError(error.response?.data?.message || "Failed to fetch post");
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError("");
-		setIsLoading(true);
-
-		try {
-			const postData = { title, content, status };
-
-			if (mode === "create") {
-				await postsAPI.createPost(postData);
-			} else {
-				await postsAPI.updatePost(parseInt(id!), postData);
-			}
-
-			// Navigate back to dashboard
-			navigate(-1);
-		} catch (error: any) {
-			setError(error.response?.data?.message || `Failed to ${mode} post`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -83,7 +94,7 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 							</div>
 						)}
 
-						<form onSubmit={handleSubmit} className="space-y-6">
+						<form onSubmit={formik.handleSubmit} className="space-y-6">
 							<div>
 								<label
 									htmlFor="title"
@@ -94,12 +105,19 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 								<input
 									type="text"
 									id="title"
-									value={title}
-									onChange={(e) => setTitle(e.target.value)}
-									required
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+									name="title"
+									disabled={isLoading}
+									value={formik.values.title}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
 									placeholder="Enter post title"
 								/>
+								{formik.errors.title && formik.touched.title && (
+									<div className="text-red-600 text-sm mt-1">
+										{formik.errors.title}
+									</div>
+								)}
 							</div>
 
 							<div>
@@ -111,13 +129,20 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 								</label>
 								<textarea
 									id="content"
-									value={content}
-									onChange={(e) => setContent(e.target.value)}
-									required
+									name="content"
+									disabled={isLoading}
+									value={formik.values.content}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
 									rows={8}
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
 									placeholder="Enter post content"
 								/>
+								{formik.errors.content && formik.touched.content && (
+									<div className="text-red-600 text-sm mt-1">
+										{formik.errors.content}
+									</div>
+								)}
 							</div>
 
 							<div>
@@ -129,29 +154,36 @@ const PostForm: React.FC<PostFormProps> = ({ mode }) => {
 								</label>
 								<select
 									id="status"
-									value={status}
-									onChange={(e) =>
-										setStatus(e.target.value as "published" | "draft")
-									}
-									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+									name="status"
+									disabled={isLoading}
+									value={formik.values.status}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<option value="draft">Draft</option>
 									<option value="published">Published</option>
 								</select>
+								{formik.errors.status && formik.touched.status && (
+									<div className="text-red-600 text-sm mt-1">
+										{formik.errors.status}
+									</div>
+								)}
 							</div>
 
 							<div className="flex justify-end space-x-3">
 								<button
 									type="button"
 									onClick={() => navigate(-1)}
-									className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
+									disabled={isLoading}
+									className="bg-gray-300 cursor-pointer hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Cancel
 								</button>
 								<button
 									type="submit"
-									disabled={isLoading}
-									className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+									disabled={isLoading || !(formik.isValid && formik.dirty)}
+									className="bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
 								>
 									{isLoading
 										? "Saving..."
